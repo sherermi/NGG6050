@@ -1,0 +1,46 @@
+%%QNC Fall 2023- Frequentist Versus Bayesian Approaches Exercise 1
+  %Author: Mia Sherer
+  %Date: 09052023
+  %To be run in Matlab 
+
+%% Exercise #1: 
+% If someone gets a positive test, is it "statistically significant" at 
+% the p<0.05 level? Why or why not?
+    %No because the likelihood of getting a positive test result is 5% so 
+    % the p value would need to be less than 0.05 to be statistically significant. 
+
+%% Exercise #2: What is the probability that if someone gets a positive test, that person is infected?
+
+% Assume a range of priors (infection rates) from 0 to 1 in steps of 0.1.
+prevalence_range = 0:0.1:1;
+
+% Initialize an array to store the results
+results = zeros(size(prevalence_range));
+
+% Define the false positive rate of the test
+false_positive_rate = 0.05;
+
+% Loop through each prevalence rate
+for i = 1:length(prevalence_range)
+    prevalence = prevalence_range(i);
+    
+    % Calculate the probability of testing positive
+    probability_positive = 1 * prevalence + false_positive_rate * (1 - prevalence);
+    
+    % Calculate the probability that someone who tests positive is actually infected
+    probability_infected_given_positive = (1 * prevalence) / probability_positive;
+    
+    % Store the result in the results array
+    results(i) = probability_infected_given_positive;
+end
+
+% Display the results
+figure;
+plot(prevalence_range, results, '-o');
+xlabel('Prevalence Rate');
+ylabel('Probability (Infected | Positive)');
+title('Probability vs. Prevalence Rate');
+grid on;
+
+
+
