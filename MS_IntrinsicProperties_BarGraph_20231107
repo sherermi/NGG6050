@@ -1,0 +1,74 @@
+%%Purpose 
+  %Blot bar graphs of mean and SEM of intrinsic properties
+  %Manually select variable to graph
+
+%% Import Data 
+
+excel = '\\ressmb01.research.chop.edu\Goldberg_Lab\Mia Sherer\Analysis\ephys\SCN3A_intrinsic_properties\20231103_Condensed_P10-12_ANALYSIS.xlsx'
+
+IntrinsicProperties_table = readtable(excel);
+
+
+  
+%% Define the variable name you want to compare
+variableName = 'MaxSSFF_HZ_';  % Replace with the actual variable name
+
+% Convert the 'Genotype' cell array to a string array
+genotypeData = string(IntrinsicProperties_table.Genotype);
+
+% Extract data for the "WT" and "SCN3A" genotypes
+wtData = IntrinsicProperties_table.(variableName)(genotypeData == 'WT');
+scn3aData = IntrinsicProperties_table.(variableName)(genotypeData == 'SCN3A');
+
+% Compute the mean and SEM for "WT" and "SCN3A" data
+wtMean = mean(wtData);
+scn3aMean = mean(scn3aData);
+wtSEM = std(wtData) / sqrt(length(wtData));
+scn3aSEM = std(scn3aData) / sqrt(length(scn3aData));
+
+%% Bar graph
+
+%Set colors
+%WT_color = [128/255 128/255 128/255];
+scn3a_color = [163/255 214/255 166/255];
+
+% Create the bar graph
+    categories = {'WT','SCN3A'};
+    barValues = [wtMean, scn3aMean]; % Mean WT and Scn1a values
+
+% Create a bar graph with error bars for SEM
+b = bar([wtMean, scn3aMean], 0.4, 'FaceColor', 'flat'); % Plot the mean values for each genotype
+box off 
+hold on    
+
+%set bar colors
+b.CData(2,:) = scn3a_color;
+b.CData(1,:) = WT_color; 
+
+set(b, 'EdgeColor', 'none'); 
+
+% % Add SEM error bars using the errorbar function
+xValues = [1, 2];
+errorbar(xValues, [wtMean, scn3aMean], [wtSEM, scn3aSEM], 'k.', 'LineWidth', 0.5);
+
+hold on;
+
+
+% Add individual data points using the scatter function
+hold on;
+xValues = [1, 2];
+scatter(xValues(1)*ones(size(wtData)), wtData, 'o', 'MarkerEdgeColor', [0 0 0]); % Blue points for "WT"
+scatter(xValues(2)*ones(size(scn3aData)), scn3aData, 'o', 'MarkerEdgeColor', [44/255 100/255 47/255]); % Red points for "SCN3A"
+hold off;
+
+% Customize the bar graph as needed (e.g., add labels, titles, etc.)
+xticks([1, 2]);  % Set the x-axis ticks to label the bars
+xticklabels({'WT', 'Scn3a-p.V1721A/+'});  % Set labels for the two bars
+title(['Max SSFF P10-12']); %set name
+xlabel('Genotype');
+ylabel('Max SSFF (Hz)'); 
+
+%% Save As PDF
+
+filename= ['MaxSSFF_HZ_P10-12.pdf']; %Manually enter name
+saveas(gcf, filename)
