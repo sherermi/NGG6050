@@ -1,0 +1,166 @@
+clear;
+clc;
+%% Inputs:
+
+%%% .abf file %%%
+% Program will prompt you to select a .abf file
+
+%%% Sweeps %%%
+% Enter which sweeps you want (e.g. [1 5 10])
+sweeps = [7 8 9 10];
+
+%%% Colors %%%
+% Enter RBG color codes for the colors you want for each sweep + alpha for
+% transparencies
+% e.g. {[0/255 0/255 0/255] [0/255 0/255 0/255] [0/255 0/255 0/255]}
+
+%Variant colors 
+%colors = { [153/255 189/255 211/255] [102/255 157/255 189/255] [51/255 124/255 167/255] [1/255 92/255 146/255]};
+
+%Control colors 
+colors = { [150/255 150/255 150/255] [112/255 112/255 112/255] [59/255 59/255 59/255] [43/255 43/255 43/255] };
+
+%%% Line Widths %%%
+% Enter line widths for each sweep
+% e.g. [1 0.5 1]
+widths = [1 1 1 1];
+
+%%% Save File Name %%%
+%saveName = 'test.pdf';
+
+%%% Save Path %%%
+%savePath = "C:\Users\liebergals\OneDrive - Children's Hospital of Philadelphia\Goldberg Lab\Sophie\figures\ndnf_scn1a\electrophysiology\intrinsic_props_2023-03-30";
+
+
+%% Outputs:
+% Plot with voltage traces and current traces for selected steps
+
+%% Import File
+ % get the path of the .abf file of interest
+    [fileName,path] = uigetfile('*.abf', 'abf files');
+    pathFileName = [path fileName];
+    % make this the default path
+    cd(path)
+[data,si,h]=abfload(pathFileName);
+% data = data frame configured as <data pts per sweep> by <number of chans> 
+%   by <number of sweeps>.
+% si = sampling interval in microseconds (us)
+%       Note: sampling rate (Hz) = 1e6 / si (us)
+% h = information on file (selected header parameters)
+
+% Extract dimensions of the full data matrix
+[i, num_chan, num_sweeps]=size(data); 
+% i = number of samples in each sweep (i.e. recorded data points)
+% num_chan = number of channels
+% num_sweeps = number of sweeps in .abf file
+
+if num_chan < 4
+    v_chan = 1;
+    i_chan = 2;
+else    
+    v_chan = 3; % Membrane voltage channel
+    i_chan = 4; % Secondary output reading current channel
+end
+
+% Create vector with all indices in file
+indices = 1:i;
+
+% Create a vector with all indices converted to time points
+time(indices,1) = (indices./(1e6./si));
+
+%% Set Plotting Window
+
+% Find on and off times for current steps
+I_diff = diff(data(:,i_chan,1)); % extract current signal (channel 2) for first sweep
+I_on = find(I_diff == min(I_diff),1); % get index when current goes on (minimum of dI/dt)
+I_off = find(I_diff == max(I_diff),1); % get index when current goes off (maximum of dI/dt)
+% Note: this assumes that this time is the same for each sweep and that the
+% first sweep injects negative current
+
+%% Set up tiles
+figure
+tiledlayout(18,1, 'TileSpacing','none','Padding','compact'); %makes layout that is 16 tiles heigh and 1 tile wide
+set(gcf,'units','inches','position',[0.25, 0.25, 5, 10])
+            %first 2 coordinates are position on screen (inches from L and bottom)
+
+
+%% Plot 1: 4X Rheobase
+nexttile([4 1]);   %tells 1st set axes to take up 4 rows, 1 column
+     plot(time,data(:,v_chan,sweeps(4)),'Color',colors{4},'LineWidth',widths(4));
+    ax1 = gca;
+        axis([0 2 -120 60]);
+        xticks([]);
+        yticks([]);
+        ax1.Visible = 'off';
+hold on 
+
+%% Plot 2: 3X Rheobase
+
+nexttile([4 1]);  
+plot(time,data(:,v_chan,sweeps(3)),'Color',colors{3},'LineWidth',widths(3));
+    ax1 = gca;
+        axis([0 2 -120 60]);
+        xticks([]);
+        yticks([]);
+        ax1.Visible = 'off';
+hold on 
+
+        
+%% Plot 3: 2x Rheobase
+nexttile([4 1]);  
+plot(time,data(:,v_chan,sweeps(2)),'Color',colors{2},'LineWidth',widths(2));
+    ax1 = gca;
+        axis([0 2 -120 60]);
+        xticks([]);
+        yticks([]);
+        ax1.Visible = 'off';
+hold on 
+
+%% Plot 4: Rheobase
+nexttile([4 1]);  
+plot(time,data(:,v_chan,sweeps(1)),'Color',colors{1},'LineWidth',widths(1));
+    ax1 = gca;
+        axis([0 2 -120 60]);
+        xticks([]);
+        yticks([]);
+        ax1.Visible = 'off';
+hold on 
+
+% Add scale bar to rheo sweep 
+scale_bar_length = 100; % set scale bar length in ms
+scale_bar_height = 20; % set scale bar height in mV
+scale_bar_ypos = -40; % set scale bar y position in mV
+scale_bar_xpos = 800; % set scale bar x position in ms
+len = time((scale_bar_xpos*1e3/si):(scale_bar_xpos*1e3./si)+(scale_bar_length*1e3/si));
+plot(len,repelem(scale_bar_ypos,size(len,1)),'k'); % plot horizontal scale bar
+hold on
+
+height = scale_bar_ypos:1/1e3*si:scale_bar_ypos+scale_bar_height;
+plot(repelem(time(scale_bar_xpos*1e3/si),size(height,2)),height,'k'); % plot vertical scale bar
+%text(scale_bar_xpos/1e3,scale_bar_ypos-3,sprintf('%d ms',round(scale_bar_length)));
+%text(scale_bar_xpos/1e3-.01,scale_bar_ypos+1,sprintf('%d mV',round(scale_bar_height)),'Rotation',90);
+hold off   
+%% Add current steps
+
+current_widths = [1 1 1 1];
+
+nexttile([2 1]);  
+
+for sweep = 1:length(sweeps)
+    plot(time,data(:,i_chan,sweeps(sweep)),'Color',colors{sweep},'LineWidth',current_widths(sweep));
+    ax = gca; % current axes
+    set(gca,'box','off');
+    hold on
+end
+
+ ax1 = gca;
+        axis([0 2 -120 400]);
+        xticks([]);
+        yticks([]);
+        ax1.Visible = 'off'
+
+
+
+%% SAVE
+filename= ['1864_cell5.pdf'];
+saveas(gcf, filename)
